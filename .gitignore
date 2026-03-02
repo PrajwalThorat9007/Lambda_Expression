@@ -1,10 +1,30 @@
+# IntelliJ full folder (your current one only ignores specific files inside .idea)
+.idea/
+
+# compiled class files
+*.class
+
+# log files
+*.log
+
+# jar and war files (your own build output)
+*.jar
+*.war
+*.ear
+```
+
+---
+
+### Your .gitignore should look like this finally
+```
+# Maven
 target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
-.kotlin
 
 ### IntelliJ IDEA ###
+.idea/
 .idea/modules.xml
 .idea/jarRepositories.xml
 .idea/compiler.xml
@@ -12,6 +32,13 @@ target/
 *.iws
 *.iml
 *.ipr
+
+### Compiled files ###
+*.class
+*.log
+*.jar
+*.war
+*.ear
 
 ### Eclipse ###
 .apt_generated
@@ -37,3 +64,6 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+### Kotlin ###
+.kotlin
