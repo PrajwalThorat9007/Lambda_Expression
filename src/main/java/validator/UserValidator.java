@@ -1,182 +1,212 @@
 package validator;
 
-import exception.InvalidFirstNameException;
-import exception.InvalidLastNameException;
-import exception.InvalidEmailException;
-import exception.InvalidMobileException;
-import exception.InvalidPasswordException;
 import exception.*;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 public class UserValidator {
 
     private static final String SPECIAL_CHARS = "!@#$%^&*()_+-=[]{}";
 
-    // ── First Name ───────────────────────────────────────────────────────
+    // ═══════════════════════════════════════════════════════════════
+    // LAMBDAS — each rule is a Predicate lambda
+    // Predicate<String> takes a String and returns true/false
+    // ═══════════════════════════════════════════════════════════════
+
+    // ── First Name Lambdas ───────────────────────────────────────────────
+
+    // checks name is not null or blank
+    private static final Predicate<String> isNotNullOrBlank =
+            value -> value != null && !value.isBlank();
+
+    // checks every character is a letter
+    private static final Predicate<String> hasOnlyLetters =
+            value -> value.chars()
+                    .allMatch(Character::isLetter);
+
+    // ── Email Lambdas ────────────────────────────────────────────────────
+
+    // checks exactly one @ exists
+    private static final Predicate<String> hasExactlyOneAt =
+            value -> Stream.of(value.split("@")).count() == 2;
+
+    // checks local part — 1 to 2 segments, each has atleast one letter
+    private static final Predicate<String> hasValidLocalPart =
+            value -> {
+                String localPart       = value.split("@")[0];
+                String[] localSegments = localPart.split("\\.", -1);
+                return Stream.of(localSegments)
+                        .allMatch(s -> !s.isBlank()
+                                && s.matches("[a-zA-Z0-9]*[a-zA-Z][a-zA-Z0-9]*"))
+                        && localSegments.length >= 1
+                        && localSegments.length <= 2;
+            };
+
+    // checks domain part — 2 to 3 segments, each has atleast one letter
+    private static final Predicate<String> hasValidDomainPart =
+            value -> {
+                String domainPart       = value.split("@")[1];
+                String[] domainSegments = domainPart.split("\\.", -1);
+                return Stream.of(domainSegments)
+                        .allMatch(s -> !s.isBlank()
+                                && s.matches("[a-zA-Z0-9]*[a-zA-Z][a-zA-Z0-9]*"))
+                        && domainSegments.length >= 2
+                        && domainSegments.length <= 3;
+            };
+
+    // ── Mobile Lambdas ───────────────────────────────────────────────────
+
+    // checks exactly one space exists
+    private static final Predicate<String> hasExactlyOneSpace =
+            value -> Stream.of(value.split(" ")).count() == 2;
+
+    // checks country code — 1 to 3 digits, numeric only
+    private static final Predicate<String> hasValidCountryCode =
+            value -> {
+                String cc = value.split(" ")[0];
+                return cc.matches("[0-9]+")
+                        && cc.length() >= 1
+                        && cc.length() <= 3;
+            };
+
+    // checks mobile number — exactly 10 digits, numeric, not starting with 0
+    private static final Predicate<String> hasValidMobileNumber =
+            value -> {
+                String number = value.split(" ")[1];
+                return number.matches("[0-9]+")
+                        && number.length() == 10
+                        && number.charAt(0) != '0';
+            };
+
+    // ── Password Lambdas ─────────────────────────────────────────────────
+
+    // Rule 1: minimum 8 characters
+    private static final Predicate<String> hasMinLength =
+            value -> value.length() >= 8;
+
+    // Rule 2: atleast one digit
+    private static final Predicate<String> hasDigit =
+            value -> value.chars()
+                    .anyMatch(Character::isDigit);
+
+    // Rule 3: atleast one uppercase letter
+    private static final Predicate<String> hasUpperCase =
+            value -> value.chars()
+                    .anyMatch(Character::isUpperCase);
+
+    // Rule 4: exactly one special character
+    private static final Predicate<String> hasExactlyOneSpecialChar =
+            value -> value.chars()
+                    .filter(c -> SPECIAL_CHARS.indexOf(c) >= 0)
+                    .count() == 1;
+
+    // Rule 5: no spaces
+    private static final Predicate<String> hasNoSpaces =
+            value -> value.chars()
+                    .noneMatch(c -> c == ' ');
+
+    // ═══════════════════════════════════════════════════════════════
+    // VALIDATOR METHODS — call lambdas and throw exception if fails
+    // ═══════════════════════════════════════════════════════════════
 
     /**
-     * Validates first name — alphabets only, not null or empty.
+     * Validates first name using lambda predicates.
      * @throws InvalidFirstNameException if validation fails
      */
     public static void validateFirstName(String firstName) {
-        if (firstName == null || firstName.isBlank())
-            throw new InvalidFirstNameException("First name cannot be null or empty");
+        if (!isNotNullOrBlank.test(firstName))
+            throw new InvalidFirstNameException(
+                    "First name cannot be null or empty");
 
-        boolean valid = firstName.chars()
-                .allMatch(Character::isLetter);
-
-        if (!valid)
+        if (!hasOnlyLetters.test(firstName))
             throw new InvalidFirstNameException(
                     "First name must contain alphabets only. Got: " + firstName);
     }
 
-    // ── Last Name ────────────────────────────────────────────────────────
-
     /**
-     * Validates last name — alphabets only, not null or empty.
+     * Validates last name using lambda predicates.
      * @throws InvalidLastNameException if validation fails
      */
     public static void validateLastName(String lastName) {
-        if (lastName == null || lastName.isBlank())
-            throw new InvalidLastNameException("Last name cannot be null or empty");
+        if (!isNotNullOrBlank.test(lastName))
+            throw new InvalidLastNameException(
+                    "Last name cannot be null or empty");
 
-        boolean valid = lastName.chars()
-                .allMatch(Character::isLetter);
-
-        if (!valid)
+        if (!hasOnlyLetters.test(lastName))
             throw new InvalidLastNameException(
                     "Last name must contain alphabets only. Got: " + lastName);
     }
 
-    // ── Email ────────────────────────────────────────────────────────────
-
     /**
-     * Validates email format — abc.xyz@bl.co.in
+     * Validates email using lambda predicates.
      * @throws InvalidEmailException if validation fails
      */
     public static void validateEmail(String email) {
-        if (email == null || email.isBlank())
-            throw new InvalidEmailException("Email cannot be null or empty");
+        if (!isNotNullOrBlank.test(email))
+            throw new InvalidEmailException(
+                    "Email cannot be null or empty");
 
-        // must have exactly one @
-        String[] atParts = email.split("@");
-        if (Stream.of(atParts).count() != 2)
+        if (!hasExactlyOneAt.test(email))
             throw new InvalidEmailException(
                     "Email must contain exactly one @. Got: " + email);
 
-        String localPart  = atParts[0];
-        String domainPart = atParts[1];
-
-        // validate local part — 1 or 2 segments, atleast one letter each
-        String[] localSegments = localPart.split("\\.", -1);
-        boolean validLocal = Stream.of(localSegments)
-                .allMatch(s -> !s.isBlank()
-                        && s.matches("[a-zA-Z0-9]*[a-zA-Z][a-zA-Z0-9]*"))
-                && localSegments.length >= 1
-                && localSegments.length <= 2;
-
-        if (!validLocal)
+        if (!hasValidLocalPart.test(email))
             throw new InvalidEmailException(
-                    "Email local part is invalid. Got: " + localPart);
+                    "Email local part is invalid. Got: " + email.split("@")[0]);
 
-        // validate domain part — 2 or 3 segments, atleast one letter each
-        String[] domainSegments = domainPart.split("\\.", -1);
-        boolean validDomain = Stream.of(domainSegments)
-                .allMatch(s -> !s.isBlank()
-                        && s.matches("[a-zA-Z0-9]*[a-zA-Z][a-zA-Z0-9]*"))
-                && domainSegments.length >= 2
-                && domainSegments.length <= 3;
-
-        if (!validDomain)
+        if (!hasValidDomainPart.test(email))
             throw new InvalidEmailException(
-                    "Email domain part is invalid. Got: " + domainPart);
+                    "Email domain part is invalid. Got: " + email.split("@")[1]);
     }
 
-    // ── Mobile ───────────────────────────────────────────────────────────
-
     /**
-     * Validates mobile format — CC space 10digitnumber
+     * Validates mobile using lambda predicates.
      * @throws InvalidMobileException if validation fails
      */
     public static void validateMobile(String mobile) {
-        if (mobile == null || mobile.isBlank())
-            throw new InvalidMobileException("Mobile cannot be null or empty");
+        if (!isNotNullOrBlank.test(mobile))
+            throw new InvalidMobileException(
+                    "Mobile cannot be null or empty");
 
-        // must have exactly one space — split gives exactly 2 parts
-        String[] parts = mobile.split(" ");
-        if (Stream.of(parts).count() != 2)
+        if (!hasExactlyOneSpace.test(mobile))
             throw new InvalidMobileException(
                     "Mobile must have exactly one space between country code and number. Got: " + mobile);
 
-        String countryCode  = parts[0];
-        String mobileNumber = parts[1];
-
-        // validate country code — 1 to 3 digits
-        boolean validCC = Stream.of(countryCode)
-                .allMatch(s -> s.matches("[0-9]+")
-                        && s.length() >= 1
-                        && s.length() <= 3);
-
-        if (!validCC)
+        if (!hasValidCountryCode.test(mobile))
             throw new InvalidMobileException(
-                    "Country code must be 1-3 digits, numeric only. Got: " + countryCode);
+                    "Country code must be 1-3 digits, numeric only. Got: " + mobile.split(" ")[0]);
 
-        // validate mobile number — exactly 10 digits, not starting with 0
-        if (!mobileNumber.matches("[0-9]+") || mobileNumber.length() != 10)
+        if (!hasValidMobileNumber.test(mobile))
             throw new InvalidMobileException(
-                    "Mobile number must be exactly 10 digits. Got: " + mobileNumber);
-
-        if (mobileNumber.charAt(0) == '0')
-            throw new InvalidMobileException(
-                    "Mobile number cannot start with 0. Got: " + mobileNumber);
+                    "Mobile number must be exactly 10 digits, not starting with 0. Got: " + mobile.split(" ")[1]);
     }
 
-    // ── Password ─────────────────────────────────────────────────────────
-
     /**
-     * Validates password — all 5 rules using streams.
+     * Validates password using lambda predicates.
      * @throws InvalidPasswordException if validation fails
      */
     public static void validatePassword(String password) {
         if (password == null)
-            throw new InvalidPasswordException("Password cannot be null");
+            throw new InvalidPasswordException(
+                    "Password cannot be null");
 
-        // Rule 1: minimum 8 characters
-        boolean validLength = Stream.of(password)
-                .allMatch(p -> p.length() >= 8);
-        if (!validLength)
+        if (!hasMinLength.test(password))
             throw new InvalidPasswordException(
                     "Password must be atleast 8 characters. Got length: " + password.length());
 
-        // Rule 2: atleast one digit
-        boolean hasDigit = password.chars()
-                .anyMatch(Character::isDigit);
-        if (!hasDigit)
+        if (!hasDigit.test(password))
             throw new InvalidPasswordException(
                     "Password must contain atleast one digit");
 
-        // Rule 3: atleast one uppercase
-        boolean hasUpper = password.chars()
-                .anyMatch(Character::isUpperCase);
-        if (!hasUpper)
+        if (!hasUpperCase.test(password))
             throw new InvalidPasswordException(
                     "Password must contain atleast one uppercase letter");
 
-        // Rule 4: exactly one special character
-        long specialCount = password.chars()
-                .filter(c -> SPECIAL_CHARS.indexOf(c) >= 0)
-                .count();
-        if (specialCount == 0)
+        if (!hasExactlyOneSpecialChar.test(password))
             throw new InvalidPasswordException(
                     "Password must contain exactly one special character");
-        if (specialCount > 1)
-            throw new InvalidPasswordException(
-                    "Password must not contain more than one special character. Found: " + specialCount);
 
-        // Rule 5: no spaces
-        boolean hasSpace = password.chars()
-                .anyMatch(c -> c == ' ');
-        if (hasSpace)
+        if (!hasNoSpaces.test(password))
             throw new InvalidPasswordException(
                     "Password must not contain spaces");
     }
