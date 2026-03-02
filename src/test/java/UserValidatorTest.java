@@ -1,430 +1,296 @@
+import exception.*;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import validator.UserValidator;
+
 import static org.junit.jupiter.api.Assertions.*;
-import java.util.stream.Stream;
+import validator.UserValidator;
 
 public class UserValidatorTest {
 
     // ═══════════════════════════════════════════════════════════════
-    // FIRST NAME TESTS
+    // FIRST NAME
     // ═══════════════════════════════════════════════════════════════
 
-    @Test
-    void testFirstName_Happy_ValidName() {
-        // valid first name with alphabets only
-        assertTrue(isValidName("Alice"));
+    @ParameterizedTest(name = "valid first name: {0}")
+    @ValueSource(strings = {"Alice", "Bob", "A"})
+    void testFirstName_Happy_ValidNames(String name) {
+        // valid names should not throw any exception
+        assertDoesNotThrow(() -> UserValidator.validateFirstName(name));
+    }
+
+    @ParameterizedTest(name = "null or empty first name: [{0}]")
+    @NullAndEmptySource
+    void testFirstName_Sad_NullAndEmpty(String name) {
+        // null and empty should throw InvalidFirstNameException
+        assertThrows(InvalidFirstNameException.class,
+                () -> UserValidator.validateFirstName(name));
+    }
+
+    @ParameterizedTest(name = "invalid first name: {0}")
+    @ValueSource(strings = {"Alice123", "Alice@", "Ali ce", "123"})
+    void testFirstName_Sad_InvalidNames(String name) {
+        // invalid names should throw InvalidFirstNameException
+        assertThrows(InvalidFirstNameException.class,
+                () -> UserValidator.validateFirstName(name));
     }
 
     @Test
-    void testFirstName_Happy_SingleChar() {
-        // single character is valid
-        assertTrue(isValidName("A"));
-    }
-
-    @Test
-    void testFirstName_Sad_Empty() {
-        // empty first name should fail
-        assertFalse(isValidName(""));
-    }
-
-    @Test
-    void testFirstName_Sad_Null() {
-        // null first name should fail
-        assertFalse(isValidName(null));
-    }
-
-    @Test
-    void testFirstName_Sad_WithNumbers() {
-        // numbers in first name should fail
-        assertFalse(isValidName("Alice123"));
-    }
-
-    @Test
-    void testFirstName_Sad_WithSpecialChar() {
-        // special characters in first name should fail
-        assertFalse(isValidName("Alice@"));
-    }
-
-    @Test
-    void testFirstName_Sad_WithSpace() {
-        // space in first name should fail
-        assertFalse(isValidName("Ali ce"));
+    void testFirstName_Sad_ExceptionMessage() {
+        // exception message should be meaningful
+        InvalidFirstNameException ex = assertThrows(
+                InvalidFirstNameException.class,
+                () -> UserValidator.validateFirstName("Alice123"));
+        assertTrue(ex.getMessage().contains("alphabets only"));
     }
 
     // ═══════════════════════════════════════════════════════════════
-    // LAST NAME TESTS
+    // LAST NAME
     // ═══════════════════════════════════════════════════════════════
 
-    @Test
-    void testLastName_Happy_ValidName() {
-        // valid last name with alphabets only
-        assertTrue(isValidName("Smith"));
+    @ParameterizedTest(name = "valid last name: {0}")
+    @ValueSource(strings = {"Smith", "Doe", "S"})
+    void testLastName_Happy_ValidNames(String name) {
+        // valid last names should not throw any exception
+        assertDoesNotThrow(() -> UserValidator.validateLastName(name));
+    }
+
+    @ParameterizedTest(name = "null or empty last name: [{0}]")
+    @NullAndEmptySource
+    void testLastName_Sad_NullAndEmpty(String name) {
+        // null and empty should throw InvalidLastNameException
+        assertThrows(InvalidLastNameException.class,
+                () -> UserValidator.validateLastName(name));
+    }
+
+    @ParameterizedTest(name = "invalid last name: {0}")
+    @ValueSource(strings = {"Smith99", "Smith#", "Smi th"})
+    void testLastName_Sad_InvalidNames(String name) {
+        // invalid last names should throw InvalidLastNameException
+        assertThrows(InvalidLastNameException.class,
+                () -> UserValidator.validateLastName(name));
     }
 
     @Test
-    void testLastName_Happy_SingleChar() {
-        // single character last name is valid
-        assertTrue(isValidName("S"));
-    }
-
-    @Test
-    void testLastName_Sad_Empty() {
-        // empty last name should fail
-        assertFalse(isValidName(""));
-    }
-
-    @Test
-    void testLastName_Sad_Null() {
-        // null last name should fail
-        assertFalse(isValidName(null));
-    }
-
-    @Test
-    void testLastName_Sad_WithNumbers() {
-        // numbers in last name should fail
-        assertFalse(isValidName("Smith99"));
-    }
-
-    @Test
-    void testLastName_Sad_WithSpecialChar() {
-        // special characters in last name should fail
-        assertFalse(isValidName("Smith#"));
+    void testLastName_Sad_ExceptionMessage() {
+        // exception message should be meaningful
+        InvalidLastNameException ex = assertThrows(
+                InvalidLastNameException.class,
+                () -> UserValidator.validateLastName("Smith99"));
+        assertTrue(ex.getMessage().contains("alphabets only"));
     }
 
     // ═══════════════════════════════════════════════════════════════
-    // EMAIL TESTS
+    // EMAIL
     // ═══════════════════════════════════════════════════════════════
 
-    @Test
-    void testEmail_Happy_FullFormat() {
-        // full email with all optional parts abc.xyz@bl.co.in
-        assertTrue(isValidEmail("abc.xyz@bl.co.in"));
+    @ParameterizedTest(name = "valid email: {0}")
+    @ValueSource(strings = {
+            "abc.xyz@bl.co.in",
+            "abc@bl.co",
+            "abc@bl.co.in",
+            "abc.xyz@bl.co"
+    })
+    void testEmail_Happy_ValidEmails(String email) {
+        // valid emails should not throw any exception
+        assertDoesNotThrow(() -> UserValidator.validateEmail(email));
+    }
+
+    @ParameterizedTest(name = "null or empty email: [{0}]")
+    @NullAndEmptySource
+    void testEmail_Sad_NullAndEmpty(String email) {
+        // null and empty should throw InvalidEmailException
+        assertThrows(InvalidEmailException.class,
+                () -> UserValidator.validateEmail(email));
+    }
+
+    @ParameterizedTest(name = "invalid email: {0}")
+    @ValueSource(strings = {
+            "abcbl.co.in",        // missing @
+            "abc@@bl.co.in",      // double @
+            "abc@bl",             // incomplete domain
+            "@bl.co.in",          // empty local part
+            "abc.xyz.pqr@bl.co",  // too many local parts
+            "abc@bl.co.in.uk",    // too many domain parts
+            "abc.@bl.co.in",      // empty segment after dot
+            "abc@bl.co.",         // trailing dot in domain
+            ".abc@bl.co",         // leading dot in local
+            "123@456.78",         // all numeric segments
+            "abc @bl.co",         // space in local
+            "abc@bl .co"          // space in domain
+    })
+    void testEmail_Sad_InvalidEmails(String email) {
+        // invalid emails should throw InvalidEmailException
+        assertThrows(InvalidEmailException.class,
+                () -> UserValidator.validateEmail(email));
     }
 
     @Test
-    void testEmail_Happy_NoOptionalParts() {
-        // email without optional parts abc@bl.co
-        assertTrue(isValidEmail("abc@bl.co"));
+    void testEmail_Sad_ExceptionMessage_MissingAt() {
+        // exception message should mention @ for missing @ case
+        InvalidEmailException ex = assertThrows(
+                InvalidEmailException.class,
+                () -> UserValidator.validateEmail("abcbl.co.in"));
+        assertTrue(ex.getMessage().contains("@"));
     }
 
     @Test
-    void testEmail_Happy_NoSubdomain() {
-        // email without xyz part abc@bl.co.in
-        assertTrue(isValidEmail("abc@bl.co.in"));
+    void testEmail_Sad_ExceptionMessage_InvalidLocal() {
+        // exception message should mention local part
+        InvalidEmailException ex = assertThrows(
+                InvalidEmailException.class,
+                () -> UserValidator.validateEmail("abc.@bl.co.in"));
+        assertTrue(ex.getMessage().contains("local part"));
     }
 
     @Test
-    void testEmail_Happy_NoExtension() {
-        // email without in part abc.xyz@bl.co
-        assertTrue(isValidEmail("abc.xyz@bl.co"));
-    }
-
-    @Test
-    void testEmail_Sad_NoAtSign() {
-        // missing @ should fail
-        assertFalse(isValidEmail("abcbl.co.in"));
-    }
-
-    @Test
-    void testEmail_Sad_DoubleAt() {
-        // double @ should fail
-        assertFalse(isValidEmail("abc@@bl.co.in"));
-    }
-
-    @Test
-    void testEmail_Sad_MissingDomain() {
-        // domain has only one part after @ should fail
-        assertFalse(isValidEmail("abc@bl"));
-    }
-
-    @Test
-    void testEmail_Sad_EmptyLocalPart() {
-        // empty local part should fail
-        assertFalse(isValidEmail("@bl.co.in"));
-    }
-
-    @Test
-    void testEmail_Sad_TooManyLocalParts() {
-        // local part has more than 2 segments should fail
-        assertFalse(isValidEmail("abc.xyz.pqr@bl.co.in"));
-    }
-
-    @Test
-    void testEmail_Sad_TooManyDomainParts() {
-        // domain has more than 3 segments should fail
-        assertFalse(isValidEmail("abc@bl.co.in.uk"));
-    }
-
-    @Test
-    void testEmail_Sad_EmptySegment() {
-        // empty segment after dot should fail
-        assertFalse(isValidEmail("abc.@bl.co.in"));
-    }
-
-    @Test
-    void testEmail_Sad_Empty() {
-        // empty email should fail
-        assertFalse(isValidEmail(""));
-    }
-
-    @Test
-    void testEmail_Sad_Null() {
-        // null email should fail
-        assertFalse(isValidEmail(null));
+    void testEmail_Sad_ExceptionMessage_InvalidDomain() {
+        // exception message should mention domain part
+        InvalidEmailException ex = assertThrows(
+                InvalidEmailException.class,
+                () -> UserValidator.validateEmail("abc@bl"));
+        assertTrue(ex.getMessage().contains("domain part"));
     }
 
     // ═══════════════════════════════════════════════════════════════
-    // MOBILE TESTS
+    // MOBILE
     // ═══════════════════════════════════════════════════════════════
 
-    @Test
-    void testMobile_Happy_TwoDigitCC() {
-        // valid mobile with 2 digit country code
-        assertTrue(isValidMobile("91 9919819801"));
+    @ParameterizedTest(name = "valid mobile: {0}")
+    @ValueSource(strings = {
+            "91 9919819801",
+            "1 9919819801",
+            "999 9919819801"
+    })
+    void testMobile_Happy_ValidMobiles(String mobile) {
+        // valid mobiles should not throw any exception
+        assertDoesNotThrow(() -> UserValidator.validateMobile(mobile));
+    }
+
+    @ParameterizedTest(name = "null or empty mobile: [{0}]")
+    @NullAndEmptySource
+    void testMobile_Sad_NullAndEmpty(String mobile) {
+        // null and empty should throw InvalidMobileException
+        assertThrows(InvalidMobileException.class,
+                () -> UserValidator.validateMobile(mobile));
+    }
+
+    @ParameterizedTest(name = "invalid mobile: {0}")
+    @ValueSource(strings = {
+            "91 0919819801",    // starts with 0
+            "91 99198198",      // too short
+            "91 99198198011",   // too long
+            "919919819801",     // no space
+            "91  9919819801",   // double space
+            "ab 9919819801",    // non numeric CC
+            "91 991981980a"     // non numeric number
+    })
+    void testMobile_Sad_InvalidMobiles(String mobile) {
+        // invalid mobiles should throw InvalidMobileException
+        assertThrows(InvalidMobileException.class,
+                () -> UserValidator.validateMobile(mobile));
     }
 
     @Test
-    void testMobile_Happy_OneDigitCC() {
-        // valid mobile with 1 digit country code
-        assertTrue(isValidMobile("1 9919819801"));
+    void testMobile_Sad_ExceptionMessage_StartsWithZero() {
+        // exception message should mention starts with 0
+        InvalidMobileException ex = assertThrows(
+                InvalidMobileException.class,
+                () -> UserValidator.validateMobile("91 0919819801"));
+        assertTrue(ex.getMessage().contains("start with 0"));
     }
 
     @Test
-    void testMobile_Happy_ThreeDigitCC() {
-        // valid mobile with 3 digit country code
-        assertTrue(isValidMobile("999 9919819801"));
-    }
-
-    @Test
-    void testMobile_Sad_StartsWithZero() {
-        // mobile number starting with 0 should fail
-        assertFalse(isValidMobile("91 0919819801"));
-    }
-
-    @Test
-    void testMobile_Sad_TooShort() {
-        // mobile number less than 10 digits should fail
-        assertFalse(isValidMobile("91 99198198"));
-    }
-
-    @Test
-    void testMobile_Sad_TooLong() {
-        // mobile number more than 10 digits should fail
-        assertFalse(isValidMobile("91 99198198011"));
-    }
-
-    @Test
-    void testMobile_Sad_NoSpace() {
-        // missing space between CC and number should fail
-        assertFalse(isValidMobile("919919819801"));
-    }
-
-    @Test
-    void testMobile_Sad_DoubleSpace() {
-        // double space should fail
-        assertFalse(isValidMobile("91  9919819801"));
-    }
-
-    @Test
-    void testMobile_Sad_NonNumericCC() {
-        // non numeric country code should fail
-        assertFalse(isValidMobile("ab 9919819801"));
-    }
-
-    @Test
-    void testMobile_Sad_NonNumericNumber() {
-        // non numeric mobile number should fail
-        assertFalse(isValidMobile("91 991981980a"));
-    }
-
-    @Test
-    void testMobile_Sad_Empty() {
-        // empty input should fail
-        assertFalse(isValidMobile(""));
-    }
-
-    @Test
-    void testMobile_Sad_Null() {
-        // null input should fail
-        assertFalse(isValidMobile(null));
+    void testMobile_Sad_ExceptionMessage_WrongLength() {
+        // exception message should mention 10 digits
+        InvalidMobileException ex = assertThrows(
+                InvalidMobileException.class,
+                () -> UserValidator.validateMobile("91 99198198"));
+        assertTrue(ex.getMessage().contains("10 digits"));
     }
 
     // ═══════════════════════════════════════════════════════════════
-    // PASSWORD TESTS
+    // PASSWORD
     // ═══════════════════════════════════════════════════════════════
 
-    @Test
-    void testPassword_Happy_AllRulesPass() {
-        // valid password satisfying all 5 rules
-        assertTrue(isValidPassword("Hello1@23"));
-    }
-
-    @Test
-    void testPassword_Happy_DifferentSpecialChar() {
-        // valid password with different special character
-        assertTrue(isValidPassword("HelloWorld1#"));
-    }
-
-    @Test
-    void testPassword_Happy_SpecialCharAtStart() {
-        // valid password with special char at start
-        assertTrue(isValidPassword("@HelloWorld1"));
-    }
-
-    @Test
-    void testPassword_Happy_SpecialCharAtEnd() {
-        // valid password with special char at end
-        assertTrue(isValidPassword("HelloWorld1@"));
-    }
-
-    @Test
-    void testPassword_Sad_Rule1_TooShort() {
-        // less than 8 characters should fail Rule 1
-        assertFalse(isValidPassword("He1@"));
-    }
-
-    @Test
-    void testPassword_Sad_Rule1_Empty() {
-        // empty password should fail Rule 1
-        assertFalse(isValidPassword(""));
-    }
-
-    @Test
-    void testPassword_Sad_Rule2_NoDigit() {
-        // no digit should fail Rule 2
-        assertFalse(isValidPassword("HelloWorld@"));
-    }
-
-    @Test
-    void testPassword_Sad_Rule3_NoUppercase() {
-        // no uppercase should fail Rule 3
-        assertFalse(isValidPassword("hello1@23"));
-    }
-
-    @Test
-    void testPassword_Sad_Rule4_NoSpecialChar() {
-        // no special character should fail Rule 4
-        assertFalse(isValidPassword("Hello1234"));
-    }
-
-    @Test
-    void testPassword_Sad_Rule4_TwoSpecialChars() {
-        // two special characters should fail Rule 4
-        assertFalse(isValidPassword("Hello1@2#"));
-    }
-
-    @Test
-    void testPassword_Sad_Rule5_HasSpace() {
-        // space in password should fail Rule 5
-        assertFalse(isValidPassword("Hello 1@2"));
+    @ParameterizedTest(name = "valid password: {0}")
+    @ValueSource(strings = {
+            "Hello1@23",
+            "HelloWorld1#",
+            "@HelloWorld1",
+            "HelloWorld1@"
+    })
+    void testPassword_Happy_ValidPasswords(String password) {
+        // valid passwords should not throw any exception
+        assertDoesNotThrow(() -> UserValidator.validatePassword(password));
     }
 
     @Test
     void testPassword_Sad_Null() {
-        // null password should fail
-        assertFalse(isValidPassword(null));
+        // null password should throw InvalidPasswordException
+        assertThrows(InvalidPasswordException.class,
+                () -> UserValidator.validatePassword(null));
     }
 
-    // ═══════════════════════════════════════════════════════════════
-    // VALIDATOR METHODS USING STREAMS AND LAMBDAS
-    // same logic from our previous validator classes
-    // ═══════════════════════════════════════════════════════════════
-
-    // validates first and last name using stream + lambda
-    private boolean isValidName(String name) {
-        if (name == null || name.isBlank()) return false;
-
-        // stream over each character, allMatch checks every char is a letter
-        return name.chars()
-                .allMatch(Character::isLetter);
+    @ParameterizedTest(name = "invalid password: {0}")
+    @ValueSource(strings = {
+            "He1@",           // Rule 1: too short
+            "HelloWorld@",    // Rule 2: no digit
+            "hello1@23",      // Rule 3: no uppercase
+            "Hello1234",      // Rule 4: no special char
+            "Hello1@2#",      // Rule 4: two special chars
+            "Hello 1@2"       // Rule 5: has space
+    })
+    void testPassword_Sad_InvalidPasswords(String password) {
+        // invalid passwords should throw InvalidPasswordException
+        assertThrows(InvalidPasswordException.class,
+                () -> UserValidator.validatePassword(password));
     }
 
-    // validates email format abc.xyz@bl.co.in
-    private boolean isValidEmail(String email) {
-        if (email == null || email.isBlank()) return false;
-
-        // split by @ — must give exactly 2 parts
-        String[] atParts = email.split("@");
-
-        boolean validAtSplit = Stream.of(atParts).count() == 2;
-        if (!validAtSplit) return false;
-
-        String localPart  = atParts[0];
-        String domainPart = atParts[1];
-
-        // local part — 1 or 2 segments, all alphanumeric
-        String[] localSegments = localPart.split("\\.",-1);
-        boolean validLocal = Stream.of(localSegments)
-                .allMatch(s -> !s.isBlank() && s.matches("[a-zA-Z0-9]+"))
-                && localSegments.length >= 1
-                && localSegments.length <= 2;
-
-        if (!validLocal) return false;
-
-        // domain part — 2 or 3 segments, all alphanumeric
-        String[] domainSegments = domainPart.split("\\.",-1);
-        return Stream.of(domainSegments)
-                .allMatch(s -> !s.isBlank() && s.matches("[a-zA-Z0-9]+"))
-                && domainSegments.length >= 2
-                && domainSegments.length <= 3;
+    @Test
+    void testPassword_Sad_ExceptionMessage_TooShort() {
+        // exception message should mention 8 characters
+        InvalidPasswordException ex = assertThrows(
+                InvalidPasswordException.class,
+                () -> UserValidator.validatePassword("He1@"));
+        assertTrue(ex.getMessage().contains("8 characters"));
     }
 
-    // validates mobile format — CC space 10digitnumber
-    private boolean isValidMobile(String input) {
-        if (input == null || input.isBlank()) return false;
-
-        // split by space — must give exactly 2 parts
-        String[] parts = input.split(" ");
-
-        boolean validSplit = Stream.of(parts).count() == 2;
-        if (!validSplit) return false;
-
-        String countryCode  = parts[0];
-        String mobileNumber = parts[1];
-
-        // country code — 1 to 3 digits, numeric only
-        boolean validCC = Stream.of(countryCode)
-                .allMatch(s -> s.matches("[0-9]+")
-                        && s.length() >= 1
-                        && s.length() <= 3);
-
-        if (!validCC) return false;
-
-        // mobile number — exactly 10 digits, not starting with 0
-        return Stream.of(mobileNumber)
-                .allMatch(s -> s.matches("[0-9]+")
-                        && s.length() == 10
-                        && s.charAt(0) != '0');
+    @Test
+    void testPassword_Sad_ExceptionMessage_NoDigit() {
+        // exception message should mention digit
+        InvalidPasswordException ex = assertThrows(
+                InvalidPasswordException.class,
+                () -> UserValidator.validatePassword("HelloWorld@"));
+        assertTrue(ex.getMessage().contains("digit"));
     }
 
-    // validates password — all 5 rules using streams
-    private static final String SPECIAL_CHARS = "!@#$%^&*()_+-=[]{}";
+    @Test
+    void testPassword_Sad_ExceptionMessage_NoUppercase() {
+        // exception message should mention uppercase
+        InvalidPasswordException ex = assertThrows(
+                InvalidPasswordException.class,
+                () -> UserValidator.validatePassword("hello1@23"));
+        assertTrue(ex.getMessage().contains("uppercase"));
+    }
 
-    private boolean isValidPassword(String password) {
-        if (password == null) return false;
+    @Test
+    void testPassword_Sad_ExceptionMessage_NoSpecialChar() {
+        // exception message should mention special character
+        InvalidPasswordException ex = assertThrows(
+                InvalidPasswordException.class,
+                () -> UserValidator.validatePassword("Hello1234"));
+        assertTrue(ex.getMessage().contains("special character"));
+    }
 
-        // Rule 1: minimum 8 characters
-        boolean validLength = Stream.of(password)
-                .allMatch(p -> p.length() >= 8);
-        if (!validLength) return false;
-
-        // Rule 2: atleast one digit
-        boolean hasDigit = password.chars()
-                .anyMatch(Character::isDigit);
-        if (!hasDigit) return false;
-
-        // Rule 3: atleast one uppercase
-        boolean hasUpper = password.chars()
-                .anyMatch(Character::isUpperCase);
-        if (!hasUpper) return false;
-
-        // Rule 4: exactly one special character
-        long specialCount = password.chars()
-                .filter(c -> SPECIAL_CHARS.indexOf(c) >= 0)
-                .count();
-        if (specialCount != 1) return false;
-
-        // Rule 5: no spaces
-        return password.chars()
-                .noneMatch(c -> c == ' ');
+    @Test
+    void testPassword_Sad_ExceptionMessage_HasSpace() {
+        // exception message should mention spaces
+        InvalidPasswordException ex = assertThrows(
+                InvalidPasswordException.class,
+                () -> UserValidator.validatePassword("Hello 1@2"));
+        assertTrue(ex.getMessage().contains("spaces"));
     }
 }
